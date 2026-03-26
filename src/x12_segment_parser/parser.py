@@ -32,7 +32,7 @@ class X12Parser:
         :rtype: str
         """
 
-        return f"X12Parser('{self._chunk_size}')"
+        return f"X12Parser({self._chunk_size})"
 
     def _determine_delimiters(self: X12Parser, filepath: str) -> Delimiters:
         """
@@ -54,9 +54,9 @@ class X12Parser:
             header = file.read(106)
             if len(header) < 106:
                 raise ValueError(
-                    'File is too short to be a valid X12 Document')
+                    'File is too short to be a valid X12 Document.')
             if not header.startswith(b'ISA'):
-                raise ValueError("X12 document must begin with ISA segment")
+                raise ValueError("X12 document must begin with ISA segment.")
 
             element_sep = chr(header[3])
             component_sep = chr(header[104])
