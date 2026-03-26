@@ -102,8 +102,8 @@ class DataElement:
         else:
             if not index or index < 1 or index > self._tuple_len:
                 raise IndexError(
-                    f'Elements are 1-indexed. Index value of {index} is outside '
-                    f'of bounds 1 and ${self._tuple_len}.'
+                    f'Elements are 1-indexed. Index value of {index} is outside'
+                    f' of bounds 1 and ${self._tuple_len}.'
                 )
             if self.dataType == DataType.COMPONENT:
                 return self._value_str_tuple[index]

@@ -1,6 +1,6 @@
-from delimiters import Delimiters
 from typing import Generator, List
-from segment import SegmentInfo, DataElement, DataType
+from x12_segment_parser._delimiters import Delimiters
+from x12_segment_parser.segment import DataType, DataElement, SegmentInfo
 
 
 class X12Parser:

@@ -1,0 +1,25 @@
+[project]
+name = "x12_segment_parser"
+version = "0.0.1"
+authors = [
+        { name="Jaraad Kamal", email="jkamal@pistevodecision.com" },
+]
+description = "A small package that breaks down X12 files into segments"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+
+[project.optional-dependencies]
+dev = [
+        "pytest>=9.0",
+        "pytest-mock>=3.0",
+        "pytest-cov>=7.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+

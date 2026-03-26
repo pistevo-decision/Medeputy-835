@@ -1,1 +1,22 @@
+# Package build artifacts
+
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+.venv/
+venv/
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Python Cache
 __pycache__/
+*.pyc
+*.pyo
+
+# Editors
+.vscode
