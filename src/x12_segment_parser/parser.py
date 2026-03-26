@@ -1,6 +1,6 @@
 from typing import Generator, List
 from x12_segment_parser._delimiters import Delimiters
-from x12_segment_parser.segment import DataType, DataElement, SegmentInfo
+from x12_segment_parser.segment import DataElement, SegmentInfo
 
 
 class X12Parser:
@@ -129,7 +129,7 @@ class X12Parser:
 
         raw_components = raw.split(delimiters.component_sep)
         components: List[str] = [v.strip() for v in raw_components]
-        return DataElement(DataType.COMPONENT, components)
+        return DataElement(components)
 
     def parse_segment(
             self: X12Parser,
@@ -165,16 +165,12 @@ class X12Parser:
                     sub_elements.append(
                         self.parse_component(raw_sub_element, delimiters)
                     )
-                elements.append(
-                    DataElement(DataType.MULTI_COMPONENT, sub_elements)
-                )
+                elements.append(DataElement(sub_elements))
 
             elif delimiters.component_sep in raw_element and not is_isa_seg:
                 elements.append(self.parse_component(raw_element, delimiters))
             else:
-                elements.append(
-                    DataElement(DataType.STRING, raw_element.strip())
-                )
+                elements.append(DataElement(raw_element.strip()))
 
         return SegmentInfo(name, elements)
 
