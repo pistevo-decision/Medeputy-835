@@ -1,5 +1,5 @@
 from typing import Generator, List
-from x12_segment_parser._delimiters import Delimiters
+from x12_segment_parser.delimiters import Delimiters
 from x12_segment_parser.segment import DataElement, SegmentInfo
 
 
@@ -194,5 +194,6 @@ class X12Parser:
         is_isa_seg = True
 
         for raw_segment in self._iter_segments(filepath, delimiters):
-            yield self.parse_segment(raw_segment, delimiters, is_isa_seg)
+            segment = self.parse_segment(raw_segment, delimiters, is_isa_seg)
             is_isa_seg = False
+            yield segment
