@@ -1,5 +1,5 @@
 from typing import Generator, List
-from x12_segment_parser.delimiters import Delimiters
+from x12_segment_parser._delimiters import Delimiters
 from x12_segment_parser.segment import DataElement, SegmentInfo
 
 
@@ -109,7 +109,7 @@ class X12Parser:
         if leftover.strip():
             yield leftover.strip().decode('utf-8')
 
-    def parse_component(
+    def _parse_component(
             self: X12Parser,
             raw: str,
             delimiters: Delimiters
@@ -131,7 +131,7 @@ class X12Parser:
         components: List[str] = [v.strip() for v in raw_components]
         return DataElement(components)
 
-    def parse_segment(
+    def _parse_segment(
             self: X12Parser,
             raw_segment: str,
             delimiters: Delimiters,
@@ -163,12 +163,12 @@ class X12Parser:
                 sub_elements: List[DataElement] = []
                 for raw_sub_element in raw_sub_elements:
                     sub_elements.append(
-                        self.parse_component(raw_sub_element, delimiters)
+                        self._parse_component(raw_sub_element, delimiters)
                     )
                 elements.append(DataElement(sub_elements))
 
             elif delimiters.component_sep in raw_element and not is_isa_seg:
-                elements.append(self.parse_component(raw_element, delimiters))
+                elements.append(self._parse_component(raw_element, delimiters))
             else:
                 elements.append(DataElement(raw_element.strip()))
 
@@ -194,6 +194,6 @@ class X12Parser:
         is_isa_seg = True
 
         for raw_segment in self._iter_segments(filepath, delimiters):
-            segment = self.parse_segment(raw_segment, delimiters, is_isa_seg)
+            segment = self._parse_segment(raw_segment, delimiters, is_isa_seg)
             is_isa_seg = False
             yield segment

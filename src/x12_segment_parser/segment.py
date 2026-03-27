@@ -94,4 +94,4 @@ class SegmentInfo:
         :return: Number of elements in segment instance
         :rtype: int
         """
-        return len(self._elements)
+        return len(self._elements) + 1  # adding one b/c the name is an element

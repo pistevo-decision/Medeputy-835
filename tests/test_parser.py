@@ -1,10 +1,8 @@
 from typing import List
 from unittest.mock import patch, mock_open
-from x12_segment_parser import X12Parser, Delimiters
+from x12_segment_parser import X12Parser, SegmentInfo, DataElement, DataType
+from x12_segment_parser._delimiters import Delimiters
 import pytest
-
-from x12_segment_parser.data_element import DataElement, DataType
-from x12_segment_parser.segment import SegmentInfo
 
 
 @pytest.fixture
@@ -84,23 +82,23 @@ def test_parse_segment_simple(
 ):
     raw_segment = "LQ*3"
 
-    segment = parser.parse_segment(raw_segment, delimiters)
+    segment = parser._parse_segment(raw_segment, delimiters)  # type: ignore
 
     assert segment.name == 'LQ'
     assert segment.has_element_idx(1)
     assert segment.get_element(1) == DataElement('3')
 
     raw_segment = 'REF*6R *4'
-    segment = parser.parse_segment(raw_segment, delimiters)
+    segment = parser._parse_segment(raw_segment, delimiters)  # type: ignore
     assert segment.name == 'REF'
-    assert len(segment) == 2
+    assert len(segment) == 3
     assert segment.get_element(1) == DataElement('6R')
     assert segment.get_element(2) == DataElement('4')
 
     raw_segment = 'CAS**thing*'
-    segment = parser.parse_segment(raw_segment, delimiters)
+    segment = parser._parse_segment(raw_segment, delimiters)  # type: ignore
     assert segment.name == 'CAS'
-    assert len(segment) == 3
+    assert len(segment) == 4
     assert segment.get_element(1).is_empty()
     assert segment.get_element(2).get_value() == 'thing'
     assert segment.get_element(3).is_empty()
@@ -111,10 +109,10 @@ def test_parse_segment_components(
         delimiters: Delimiters
 ):
     raw = "SVC*HC:T1019*246.21*0*0590*32**0"
-    segment = parser.parse_segment(raw, delimiters)
+    segment = parser._parse_segment(raw, delimiters)  # type: ignore
 
     assert segment.name == 'SVC'
-    assert len(segment) == 7
+    assert len(segment) == 8
     element = segment.get_element(1)
     assert element.dataType == DataType.COMPONENT
     assert len(element) == 2
@@ -128,8 +126,8 @@ def test_parse_segment_components(
     assert segment.get_element(7).get_value() == '0'
 
     raw = 'TV*:*else'
-    segment = parser.parse_segment(raw, delimiters)
-    assert len(segment) == 2
+    segment = parser._parse_segment(raw, delimiters)  # type: ignore
+    assert len(segment) == 3
     element = segment.get_element(1)
     assert element.dataType == DataType.COMPONENT
     assert len(element) == 2
@@ -142,9 +140,9 @@ def test_parse_segment_repeats(
         delimiters: Delimiters
 ):
     raw = 'RAS*something^partial:value^^*else'
-    segment = parser.parse_segment(raw, delimiters)
+    segment = parser._parse_segment(raw, delimiters)  # type: ignore
 
-    assert len(segment) == 2
+    assert len(segment) == 3
     element = segment.get_element(1)
     assert element.dataType == DataType.MULTI_COMPONENT
     assert len(element) == 4
@@ -179,4 +177,4 @@ def test_full_parse(
             segments.append(segment)
 
     assert segments[0].name == 'ISA'
-    assert len(segments[0]) == 16
+    assert len(segments[0]) == 17

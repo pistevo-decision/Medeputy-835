@@ -18,12 +18,12 @@ def test_setters():
     segment = SegmentInfo('Name', elements)
 
     assert segment.name == 'Name'
-    assert len(segment) == 2
+    assert len(segment) == 3
     assert segment.get_element(1) == DataElement('val')
     assert segment.get_element(2) == DataElement('val2')
 
     elements.pop()
-    assert len(segment) == 2
+    assert len(segment) == 3
     assert segment.get_element(1) == DataElement('val')
     assert segment.get_element(2) == DataElement('val2')
 
