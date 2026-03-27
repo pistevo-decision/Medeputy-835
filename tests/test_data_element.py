@@ -161,16 +161,16 @@ def test_get_value_errors():
 
 def test_repeats_methods():
     element = DataElement('val')
-    with pytest.raises(NotImplementedError) as exception:
+    with pytest.raises(TypeError) as exception:
         element.get_repeats()
-    assert exception.type is NotImplementedError
+    assert exception.type is TypeError
     assert 'There are no repeats for a non MULTI_COMPONENT DataElement.' in str(
         exception.value
     )
 
-    with pytest.raises(NotImplementedError) as exception:
+    with pytest.raises(TypeError) as exception:
         len(element)
-    assert exception.type is NotImplementedError
+    assert exception.type is TypeError
     assert 'DataElement of type STRING does not have a length.' in str(
         exception.value
     )
@@ -200,9 +200,9 @@ def test_has_component_methods():
     assert not element.has_component_idx(5)
     assert len(components) == 4
 
-    with pytest.raises(NotImplementedError) as exception:
+    with pytest.raises(TypeError) as exception:
         DataElement('str').has_component_idx(0)
-    assert exception.type == NotImplementedError
+    assert exception.type == TypeError
     assert (
         'There are no components for a non COMPONENT type DataElement.' in
         str(exception.value)

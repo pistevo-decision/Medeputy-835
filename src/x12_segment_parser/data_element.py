@@ -117,13 +117,13 @@ class DataElement:
 
         :param self: self
         :type self: DataElement
-        :raises NotImplementedError: If called when the dataType is not 
+        :raises TypeError: If called when the dataType is not 
         MULTI_COMPONENT
         :return: A tuple representing the repeated components
         :rtype: Tuple[DataElement, ...]
         """
         if self.dataType != DataType.MULTI_COMPONENT:
-            raise NotImplementedError(
+            raise TypeError(
                 'There are no repeats for a non MULTI_COMPONENT DataElement.'
             )
         return self._value_data_tuple
@@ -147,13 +147,13 @@ class DataElement:
         :param ignore_empty: if true then empty strings will return false, 
         defaults to True
         :type ignore_empty: bool, optional
-        :raises NotImplementedError: If called with MULTI COMPONENT or STRING 
+        :raises TypeError: If called with MULTI COMPONENT or STRING 
         type DataElement
         :return: True if there is a component at the specified index
         :rtype: bool
         """
         if self.dataType != DataType.COMPONENT:
-            raise NotImplementedError(
+            raise TypeError(
                 'There are no components for a non COMPONENT type DataElement.'
             )
         valid_idx = 0 < idx <= self._tuple_len
@@ -240,12 +240,12 @@ class DataElement:
 
         :param self: self
         :type self: DataElement
-        :raises NotImplementedError: if called with a STRING type DataElement
+        :raises TypeError: if called with a STRING type DataElement
         :return: size of internal components / repeats
         :rtype: int
         """
         if self.dataType == DataType.STRING:
-            raise NotImplementedError(
+            raise TypeError(
                 'DataElement of type STRING does not have a length.'
             )
         return self._tuple_len
