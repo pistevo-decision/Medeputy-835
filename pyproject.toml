@@ -45,3 +45,6 @@ directory = "coverage/htmlcov"
 
 [tool.coverage.lcov]
 output = "coverage/lcov.info"
+
+[project.urls]
+Homepage = "https://github.com/jkamal000/x12_segment_parser"

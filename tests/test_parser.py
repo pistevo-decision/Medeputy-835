@@ -22,6 +22,28 @@ def std_file_content() -> str:
 
 
 @pytest.fixture
+def expected_content() -> List[List[str]]:
+    return [
+        [
+            '00', '', '00', '', '30', '341858379', '30', '820836617',
+            '250717', '2350', '^', '00501', '290360607', '0', 'P', ':'
+        ],
+        [
+            'HP', 'ECHOH', '820836617', '20250717', '2350', '1', 'X',
+            '005010X221A1'
+        ],
+        [
+            '835', '000000001'
+        ],
+        [
+            'I', '5588.55', 'C', 'ACH', 'CCP', '01', '044115126', 'DA',
+            '01669508612C', '1341858379', '', '01', '055002707', 'DA',
+            '1000216278415', '20250722'
+        ]
+    ]
+
+
+@pytest.fixture
 def parser() -> X12Parser:
     return X12Parser()
 
@@ -168,9 +190,10 @@ def test_parse_segment_repeats(
 
 def test_full_parse(
         filepath: str,
-        std_file_content: str
+        std_file_content: str,
+        expected_content: List[List[str]]
 ):
-    parser = X12Parser(110)
+    parser = X12Parser()
     segments: List[SegmentInfo] = []
     with patch('builtins.open', mock_open(read_data=std_file_content.encode())):
         for segment in parser.parse_file(filepath):
@@ -178,3 +201,76 @@ def test_full_parse(
 
     assert segments[0].name == 'ISA'
     assert len(segments[0]) == 17
+    assert len(segments) == 4
+
+    expected_names = ['ISA', 'GS', 'ST', 'BPR']
+    for idx, segment in enumerate(segments):
+        assert segment.name == expected_names[idx]
+
+    for i, content in enumerate(expected_content):
+        assert len(segments[i]) == len(content) + \
+            1  # the name counts to the len
+        for j, value in enumerate(content):
+            assert segments[i].has_element_idx(j + 1, ignore_empty=False)
+            assert segments[i].get_element(j + 1).get_value() == value
+
+
+def test_leftover(filepath: str, expected_content: List[List[str]]):
+    # this test will make sure if the chunk size leads to cutting off a
+    # segment halfway through (in this case the GS segment is only partially
+    # within the first chunk), the parser will still output the entire segment
+    # by using the next chunk and andy leftovers.
+    parser = X12Parser(110)
+    file_content = (
+        "ISA*00*          *00*          *30*341858379      *30*820836617      "
+        "*250717*2350*^*00501*290360607*0*P*:~GS*HP*ECHOH*820836617*20250717*"
+        "2350*1*X*005010X221A1~"
+    )
+    segments: List[SegmentInfo] = []
+    with patch('builtins.open', mock_open(read_data=file_content.encode())):
+        for segment in parser.parse_file(filepath=filepath):
+            segments.append(segment)
+
+    assert len(segments) == 2
+    for i, segment in enumerate(segments):
+        content = expected_content[i]
+        assert len(content) + 1 == len(segment)
+        for j, value in enumerate(content):
+            assert segment.has_element_idx(j + 1, ignore_empty=False)
+            assert segment.get_element(j + 1).get_value() == value
+
+
+def test_leftover_at_end(filepath: str, expected_content: List[List[str]]):
+    # This test will make sure that if there is still "leftovers" left when the
+    # parser reaches the EOF then it will still create the appropriate segment
+    # even though it read nothing new.
+    # In this case the entire GS segment should be the leftover from the first
+    # read chunk. Thus the next chunk read will be nothing but leftovers will be
+    # filled with the entire GS content.
+    parser = X12Parser(158)
+    file_content = (
+        "ISA*00*          *00*          *30*341858379      *30*820836617      "
+        "*250717*2350*^*00501*290360607*0*P*:~GS*HP*ECHOH*820836617*20250717*"
+        "2350*1*X*005010X221A1"
+    )
+    segments: List[SegmentInfo] = []
+    with patch('builtins.open', mock_open(read_data=file_content.encode())):
+        for segment in parser.parse_file(filepath=filepath):
+            segments.append(segment)
+
+    assert len(segments) == 2
+
+
+def test_missing_segment(filepath: str):
+    parser = X12Parser(110)
+    file_content = (
+        "ISA*00*          *00*          *30*341858379      *30*820836617      "
+        "*250717*2350*^*00501*290360607*0*P*:~~"
+    )
+    segments: List[SegmentInfo] = []
+    with patch('builtins.open', mock_open(read_data=file_content.encode())):
+        for segment in parser.parse_file(filepath=filepath):
+            segments.append(segment)
+
+    assert len(segments) == 1
+    assert segments[0].name == 'ISA'

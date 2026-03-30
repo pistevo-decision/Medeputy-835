@@ -202,7 +202,7 @@ def test_has_component_methods():
 
     with pytest.raises(TypeError) as exception:
         DataElement('str').has_component_idx(0)
-    assert exception.type == TypeError
+    assert exception.type is TypeError
     assert (
         'There are no components for a non COMPONENT type DataElement.' in
         str(exception.value)

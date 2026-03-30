@@ -105,6 +105,7 @@ class X12Parser:
                 for raw_segment in segments:
                     raw_segment = raw_segment.strip()
                     if raw_segment:
+                        print(f'{len(raw_segment)}:{raw_segment}')
                         yield raw_segment.decode('utf-8')
         if leftover.strip():
             yield leftover.strip().decode('utf-8')
