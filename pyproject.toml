@@ -1,5 +1,5 @@
 [project]
-name = "x12_segment_parser"
+name = "Medeputy-835"
 version = "0.0.1"
 authors = [
         { name="Jaraad Kamal", email="jkamal@pistevodecision.com" },
@@ -47,4 +47,4 @@ directory = "coverage/htmlcov"
 output = "coverage/lcov.info"
 
 [project.urls]
-Homepage = "https://github.com/jkamal000/x12_segment_parser"
+Homepage = "https://github.com/pistevo-decision/Medeputy-835"

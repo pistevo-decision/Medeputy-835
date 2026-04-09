@@ -1,7 +1,7 @@
 import copy
 from dataclasses import dataclass
 from typing import Tuple, Sequence
-from x12_segment_parser.data_element import DataElement
+from medeputy835.data_element import DataElement
 
 
 @dataclass(frozen=True)

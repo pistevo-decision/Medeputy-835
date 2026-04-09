@@ -1,7 +1,7 @@
 from typing import List
 from unittest.mock import patch, mock_open
-from x12_segment_parser import X12Parser, SegmentInfo, DataElement, DataType
-from x12_segment_parser._delimiters import Delimiters
+from medeputy835 import X12Parser, SegmentInfo, DataElement, DataType
+from medeputy835._delimiters import Delimiters
 import pytest
 
 

@@ -1,6 +1,6 @@
 from typing import Generator, List
-from x12_segment_parser._delimiters import Delimiters
-from x12_segment_parser.segment import DataElement, SegmentInfo
+from medeputy835._delimiters import Delimiters
+from medeputy835.segment import DataElement, SegmentInfo
 
 
 class X12Parser:

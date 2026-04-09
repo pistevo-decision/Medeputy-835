@@ -1,5 +1,5 @@
 import pytest
-from x12_segment_parser.data_element import DataElement, DataType
+from medeputy835.data_element import DataElement, DataType
 
 
 def test_data_element_string():

@@ -27,7 +27,7 @@ Requirements: Python 3.10+
 ## Quick Start
 
 ```python
-from x12_segment_parser import X12Parser
+from medeputy835 import X12Parser
 
 parser = X12Parser()
 
@@ -271,6 +271,14 @@ pytest
 
 ```bash
 pytest --cov
+```
+
+# Building
+
+For building the package (local testing) run the following command:
+
+```bash
+python -m build
 ```
 
 ## License

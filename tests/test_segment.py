@@ -1,6 +1,6 @@
 import pytest
 from typing import List
-from x12_segment_parser import SegmentInfo, DataElement
+from medeputy835 import SegmentInfo, DataElement
 
 
 @pytest.fixture
