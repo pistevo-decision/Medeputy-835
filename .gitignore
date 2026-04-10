@@ -21,3 +21,6 @@ __pycache__/
 
 # Editors
 .vscode
+
+# MacOS
+.DS_Store
