@@ -7,6 +7,8 @@ Meant to allow segment by segment access to the X12 files with full control over
 any custom validation logic.
 Capable of handling all standard X12 files.
 
+PyPi link: https://pypi.org/project/Medeputy-835/
+
 ## Features
 
 - **Streaming parser** - process files of any size in configurable chunks
@@ -19,7 +21,7 @@ Capable of handling all standard X12 files.
 ## Installation
 
 ```bash
-TBD
+pip install Medeputy-835
 ```
 
 Requirements: Python 3.10+
@@ -281,6 +283,6 @@ For building the package (local testing) run the following command:
 python -m build
 ```
 
-## License
+# License
 
 MIT
