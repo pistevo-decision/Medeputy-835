@@ -1,4 +1,4 @@
-# X12-Segment-Parser
+# Medeputy-835
 
 A lightweight, memory-efficient Python library for streaming and parsing X12 EDI
 files into structured, immutable segment objects.

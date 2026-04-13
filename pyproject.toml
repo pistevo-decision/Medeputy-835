@@ -7,13 +7,20 @@ authors = [
 description = "A small package that breaks down X12 files into segments"
 readme = "README.md"
 requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 license = "MIT"
+license-files = ["LICEN[CS]E*"]
 
 [project.optional-dependencies]
 dev = [
         "pytest>=9.0",
         "pytest-mock>=3.0",
         "pytest-cov>=7.0",
+        "build>=1.4",
+        "twine>=6.2"
 ]
 
 [tool.setuptools.packages.find]
@@ -48,3 +55,4 @@ output = "coverage/lcov.info"
 
 [project.urls]
 Homepage = "https://github.com/pistevo-decision/Medeputy-835"
+Issues = "https://github.com/pistevo-decision/Medeputy-835/issues"
