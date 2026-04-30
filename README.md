@@ -306,6 +306,7 @@ python -m build
 # Deploying
 
 When deploying a new version of the package follow these instructions:
+
 **1. Increment version of package**
 
 Increment the version of the package in `pyproject.toml`
