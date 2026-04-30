@@ -33,9 +33,22 @@ from medeputy835 import X12Parser
 
 parser = X12Parser()
 
-from segment in parser.parse_file("path/to/file.edi"):
+from segment in parser.parse("path/to/file.edi"):
     print(segment.name)                     # e.g. "ISA", "GS"
     print(segment.get_element(1))           # first element (1-index)
+```
+
+You can also pass in a stream directly:
+
+```python
+from medeputy835 import X12Parser
+
+parser = X12Parser()
+
+with open('file', 'rb') as stream:
+    from segment in parser.parse(stream):
+        print(segment.name)                     # e.g. "ISA", "GS"
+        print(segment.get_element(1))           # first element (1-index)
 ```
 
 ## Core Classes
@@ -56,14 +69,14 @@ X12Parser(chunk_size: int=65536)
 
 ### Methods
 
-`parse_file(filepath) -> Generator[SegmentInfo, None, None]`
+`parse(source) -> Generator[SegmentInfo, None, None]`
 
 Streams an X12 file and yields one `SegmentInfo` per segment. Never loads entire
 file into memory
 
 ```python
 parser = X12Parser()
-for segment in parser.parse_file("834_enrollment.edi"):
+for segment in parser.parse("834_enrollment.edi"):
     if segment.name == "NM1":
         print(segment.get_element(3))  # Last name
 
@@ -202,14 +215,14 @@ from x12_segment_parser import X12Parser
 
 parser = X12Parser()
 
-for segment in parser.parse_file("claims.edi"):
+for segment in parser.parse("claims.edi"):
     print(f"{segment.name} ({len(segment)} elements)")
 ```
 
 **Extracting data from a specific Segment**
 
 ```python
-for segment in parser.parse_file("835_remittance.edi"):
+for segment in parser.parse("835_remittance.edi"):
     if segment.name == "CLP":
         claim_id     = segment.get_element(1).get_value()
         claim_status = segment.get_element(2).get_value()
@@ -221,7 +234,7 @@ for segment in parser.parse_file("835_remittance.edi"):
 **Working with composite elements**
 
 ```python
-for segment in parser.parse_file("file.edi"):
+for segment in parser.parse("file.edi"):
     if segment.name == "CLM":
         # CLM05 is a composite: facility_code:claim_freq:..
         if segment.has_element_idx(5):
@@ -234,7 +247,7 @@ for segment in parser.parse_file("file.edi"):
 **Working with repeating elements**
 
 ```python
-for segment in parser.parse_file("file.edi"):
+for segment in parser.parse("file.edi"):
     if segment.name == "REF":
         element = segment.get_element(2)
         if element.dataType.name == "MULTI_COMPONENT":
@@ -249,7 +262,7 @@ for segment in parser.parse_file("file.edi"):
 # Use a larger chunk size for faster throughput on very large files
 parser = X12Parser(chunk_size=256 * 1024)  # 256 KB
 
-for segment in parser.parse_file("very_large_file.edi"):
+for segment in parser.parse("very_large_file.edi"):
     ...
 ```
 
@@ -275,12 +288,62 @@ pytest
 pytest --cov
 ```
 
+When testing new versions of this package (for development) run the following
+command to install the current version of the package:
+
+```bash
+pip install -e .
+```
+
 # Building
 
 For building the package (local testing) run the following command:
 
 ```bash
 python -m build
+```
+
+# Deploying
+
+When deploying a new version of the package follow these instructions:
+**1. Increment version of package**
+
+Increment the version of the package in `pyproject.toml`
+
+**2. Delete the old dist files**
+
+Each deployment uploads the entire distribution folder which will throw errors
+if the folder includes previously uploaded distributions
+
+```bash
+rm -rf dist
+```
+
+**3. Build new module**
+
+```
+python -m build
+```
+
+**4. Upload to TestPyPi (optional)**
+
+```
+python -m pip install --upgrade twine
+python3 -m twine upload --repository testpypi dist/*
+```
+
+**5. Upload to PyPi (optional)**
+
+```
+python -m pip install --upgrade twine
+python3 -m twine upload dist/*
+```
+
+Each deployment uploads the entire distribution folder which will throw errors
+if the folder includes previously uploaded distributions
+
+```bash
+rm -rf dist
 ```
 
 # License
