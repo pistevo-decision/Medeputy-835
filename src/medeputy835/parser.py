@@ -1,6 +1,10 @@
-from typing import Generator, List
+from io import RawIOBase, BufferedIOBase
+from pathlib import Path
+from typing import Generator, List, Union
 from medeputy835._delimiters import Delimiters
 from medeputy835.segment import DataElement, SegmentInfo
+
+Source = Union[str, Path, RawIOBase, BufferedIOBase]
 
 
 class X12Parser:
@@ -34,24 +38,57 @@ class X12Parser:
 
         return f"X12Parser({self._chunk_size})"
 
-    def _determine_delimiters(self: X12Parser, filepath: str) -> Delimiters:
+    def _open_source(
+            self: X12Parser,
+            source: Source
+    ):
         """
-        Reads the first segment of the x12 file and determines the delimiters
-        that will be used for the file. Returns an object representing the 
-        delimiters used in the file
+        Context manager that normalizes a filepath or stream into a readable
+        binary stream. If a filepath is provided it is opened and owned by
+        this context manager (closed on exit). If a stream is provided the
+        caller retains ownership and it is not closed on exit.
 
         :param self: self
         :type self: X12Parser
-        :param filepath: path for x12 file to be parsed
-        :type filepath: str
-        :raises ValueError: if the file is less than 106 bytes (too short)
-        :raises ValueError: if the file does not start with the proper bytes
+        :param source: filepath or already-open binary stream
+        :type source: Source
+        :return: context manager yielding a binary stream
+        """
+        from contextlib import contextmanager
+
+        @contextmanager
+        def _cm():
+            if isinstance(source, (str, Path)):
+                f = open(source, 'rb')
+                try:
+                    yield f
+                finally:
+                    f.close()
+            else:
+                yield source
+
+        return _cm()
+
+    def _determine_delimiters(
+            self: X12Parser,
+            source: Source
+    ) -> Delimiters:
+        """
+        Reads the first segment of the x12 source and determines the delimiters
+        that will be used. Returns an object representing the delimiters.
+
+        :param self: self
+        :type self: X12Parser
+        :param source: filepath or already-open binary stream
+        :type source: Source
+        :raises ValueError: if the source is less than 106 bytes (too short)
+        :raises ValueError: if the source does not start with the proper bytes
         :return: delimiters used in the file.
         :rtype: Delimiters
         """
 
-        with open(filepath, 'rb') as file:
-            header = file.read(106)
+        with self._open_source(source) as stream:
+            header = stream.read(106)
             if len(header) < 106:
                 raise ValueError(
                     'File is too short to be a valid X12 Document.')
@@ -68,45 +105,42 @@ class X12Parser:
 
     def _iter_segments(
             self: X12Parser,
-            filepath: str,
+            source: Source,
             delimiters: Delimiters
     ) -> Generator[str, None, None]:
         """
-        Given filepath and delimiters this will generate an iterable for
-        each of the segments in the x12 835 file. Each segment will be a utf-8
-        string
+        Given a source and delimiters this will generate an iterable for
+        each of the segments in the x12 file. Each segment will be a utf-8
+        string.
 
         :param self: self
         :type self: X12Parser
-        :param filepath: path for x12 file that is being parsed
-        :type filepath: str
+        :param source: filepath or already-open binary stream
+        :type source: Source
         :param delimiters: delimiters for the x12 file (determined by ISA seg)
         :type delimiters: Delimiters
         :yield: String representing the segment
         :rtype: Generator[str, None, None]
         """
 
-        terminator = delimiters.segment_term
-        terminator_byte = terminator.encode()
-
+        terminator_byte = delimiters.segment_term.encode()
         leftover = b''
 
-        with open(filepath, 'rb') as f:
+        with self._open_source(source) as stream:
             while True:
-                chunk = f.read(self._chunk_size)
+                chunk = stream.read(self._chunk_size)
                 if not chunk:
                     break
 
                 chunk = leftover + chunk
                 segments = chunk.split(terminator_byte)
-
                 leftover = segments.pop()
 
                 for raw_segment in segments:
                     raw_segment = raw_segment.strip()
                     if raw_segment:
-                        print(f'{len(raw_segment)}:{raw_segment}')
                         yield raw_segment.decode('utf-8')
+
         if leftover.strip():
             yield leftover.strip().decode('utf-8')
 
@@ -154,6 +188,7 @@ class X12Parser:
         :return: Segment info object
         :rtype: SegmentInfo
         """
+
         raw_elements = raw_segment.split(delimiters.element_sep)
         name = raw_elements.pop(0).strip()
         elements: List[DataElement] = []
@@ -175,26 +210,33 @@ class X12Parser:
 
         return SegmentInfo(name, elements)
 
-    def parse_file(
+    def parse(
             self: X12Parser,
-            filepath: str
+            source: Source
     ) -> Generator[SegmentInfo, None, None]:
         """
-        Given a file path this function will determine its format and 
-        Generate a series of SegmentInfo objects that represent each segment
-        in the file
+        Given a filepath or an already-open binary stream, determines the
+        x12 format and generates a series of SegmentInfo objects representing
+        each segment.
+
+        If a filepath is provided the file is opened and closed internally.
+        If a stream is provided the caller retains ownership and is responsible
+        for closing it.
 
         :param self: self
         :type self: X12Parser
-        :param filepath: filepath for x12 file
-        :type filepath: str
+        :param source: filepath or already-open binary stream
+        :type source: Source
         :yield: SegmentInfo representation of X12 segment
         :rtype: Generator[SegmentInfo, None, None]
         """
-        delimiters = self._determine_delimiters(filepath)
-        is_isa_seg = True
 
-        for raw_segment in self._iter_segments(filepath, delimiters):
-            segment = self._parse_segment(raw_segment, delimiters, is_isa_seg)
-            is_isa_seg = False
-            yield segment
+        with self._open_source(source) as stream:
+            delimiters = self._determine_delimiters(stream)
+            stream.seek(0)
+            is_isa_seg = True
+            for raw_segment in self._iter_segments(stream, delimiters):
+                segment = self._parse_segment(
+                    raw_segment, delimiters, is_isa_seg)
+                is_isa_seg = False
+                yield segment

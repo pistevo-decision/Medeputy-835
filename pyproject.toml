@@ -1,6 +1,6 @@
 [project]
 name = "Medeputy-835"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
         { name="Jaraad Kamal", email="jkamal@pistevodecision.com" },
 ]

@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import List
 from unittest.mock import patch, mock_open
 from medeputy835 import X12Parser, SegmentInfo, DataElement, DataType
@@ -65,7 +66,7 @@ def test_create():
 
 def test_delimiters(parser: X12Parser, std_file_content: str, filepath: str):
     with patch('builtins.open', mock_open(read_data=std_file_content.encode())):
-        delimiters = parser._determine_delimiters(filepath)  # type: ignore
+        delimiters = parser._determine_delimiters(filepath)
 
     assert delimiters.component_sep == ':'
     assert delimiters.element_sep == '*'
@@ -77,7 +78,7 @@ def test_delimiters_short(parser: X12Parser, filepath: str):
     with pytest.raises(ValueError) as error:
 
         with patch('builtins.open', mock_open(read_data='abc'.encode())):
-            parser._determine_delimiters(filepath)  # type: ignore
+            parser._determine_delimiters(filepath)
 
     assert error.type is ValueError
     assert 'File is too short to be a valid X12 Document.' in str(error.value)
@@ -92,7 +93,7 @@ def test_delimiters_invalid(
     with pytest.raises(ValueError) as error:
 
         with patch('builtins.open', mock_open(read_data=file_content.encode())):
-            parser._determine_delimiters(filepath)  # type: ignore
+            parser._determine_delimiters(filepath)
 
     assert error.type is ValueError
     assert 'X12 document must begin with ISA segment.' in str(error.value)
@@ -104,21 +105,21 @@ def test_parse_segment_simple(
 ):
     raw_segment = "LQ*3"
 
-    segment = parser._parse_segment(raw_segment, delimiters)  # type: ignore
+    segment = parser._parse_segment(raw_segment, delimiters)
 
     assert segment.name == 'LQ'
     assert segment.has_element_idx(1)
     assert segment.get_element(1) == DataElement('3')
 
     raw_segment = 'REF*6R *4'
-    segment = parser._parse_segment(raw_segment, delimiters)  # type: ignore
+    segment = parser._parse_segment(raw_segment, delimiters)
     assert segment.name == 'REF'
     assert len(segment) == 3
     assert segment.get_element(1) == DataElement('6R')
     assert segment.get_element(2) == DataElement('4')
 
     raw_segment = 'CAS**thing*'
-    segment = parser._parse_segment(raw_segment, delimiters)  # type: ignore
+    segment = parser._parse_segment(raw_segment, delimiters)
     assert segment.name == 'CAS'
     assert len(segment) == 4
     assert segment.get_element(1).is_empty()
@@ -131,7 +132,7 @@ def test_parse_segment_components(
         delimiters: Delimiters
 ):
     raw = "SVC*HC:T1019*246.21*0*0590*32**0"
-    segment = parser._parse_segment(raw, delimiters)  # type: ignore
+    segment = parser._parse_segment(raw, delimiters)
 
     assert segment.name == 'SVC'
     assert len(segment) == 8
@@ -148,7 +149,7 @@ def test_parse_segment_components(
     assert segment.get_element(7).get_value() == '0'
 
     raw = 'TV*:*else'
-    segment = parser._parse_segment(raw, delimiters)  # type: ignore
+    segment = parser._parse_segment(raw, delimiters)
     assert len(segment) == 3
     element = segment.get_element(1)
     assert element.dataType == DataType.COMPONENT
@@ -162,7 +163,7 @@ def test_parse_segment_repeats(
         delimiters: Delimiters
 ):
     raw = 'RAS*something^partial:value^^*else'
-    segment = parser._parse_segment(raw, delimiters)  # type: ignore
+    segment = parser._parse_segment(raw, delimiters)
 
     assert len(segment) == 3
     element = segment.get_element(1)
@@ -189,15 +190,15 @@ def test_parse_segment_repeats(
 
 
 def test_full_parse(
-        filepath: str,
         std_file_content: str,
         expected_content: List[List[str]]
 ):
     parser = X12Parser()
     segments: List[SegmentInfo] = []
-    with patch('builtins.open', mock_open(read_data=std_file_content.encode())):
-        for segment in parser.parse_file(filepath):
-            segments.append(segment)
+    # with patch('builtins.open', mock_open(read_data=std_file_content.encode())):
+    stream = BytesIO(std_file_content.encode())
+    for segment in parser.parse(stream):
+        segments.append(segment)
 
     assert segments[0].name == 'ISA'
     assert len(segments[0]) == 17
@@ -215,7 +216,7 @@ def test_full_parse(
             assert segments[i].get_element(j + 1).get_value() == value
 
 
-def test_leftover(filepath: str, expected_content: List[List[str]]):
+def test_leftover(expected_content: List[List[str]]):
     # this test will make sure if the chunk size leads to cutting off a
     # segment halfway through (in this case the GS segment is only partially
     # within the first chunk), the parser will still output the entire segment
@@ -227,9 +228,9 @@ def test_leftover(filepath: str, expected_content: List[List[str]]):
         "2350*1*X*005010X221A1~"
     )
     segments: List[SegmentInfo] = []
-    with patch('builtins.open', mock_open(read_data=file_content.encode())):
-        for segment in parser.parse_file(filepath=filepath):
-            segments.append(segment)
+
+    for segment in parser.parse(BytesIO(file_content.encode())):
+        segments.append(segment)
 
     assert len(segments) == 2
     for i, segment in enumerate(segments):
@@ -240,7 +241,7 @@ def test_leftover(filepath: str, expected_content: List[List[str]]):
             assert segment.get_element(j + 1).get_value() == value
 
 
-def test_leftover_at_end(filepath: str, expected_content: List[List[str]]):
+def test_leftover_at_end(expected_content: List[List[str]]):
     # This test will make sure that if there is still "leftovers" left when the
     # parser reaches the EOF then it will still create the appropriate segment
     # even though it read nothing new.
@@ -254,14 +255,14 @@ def test_leftover_at_end(filepath: str, expected_content: List[List[str]]):
         "2350*1*X*005010X221A1"
     )
     segments: List[SegmentInfo] = []
-    with patch('builtins.open', mock_open(read_data=file_content.encode())):
-        for segment in parser.parse_file(filepath=filepath):
-            segments.append(segment)
+
+    for segment in parser.parse(BytesIO(file_content.encode())):
+        segments.append(segment)
 
     assert len(segments) == 2
 
 
-def test_missing_segment(filepath: str):
+def test_missing_segment():
     parser = X12Parser(110)
     file_content = (
         "ISA*00*          *00*          *30*341858379      *30*820836617      "
@@ -269,8 +270,109 @@ def test_missing_segment(filepath: str):
     )
     segments: List[SegmentInfo] = []
     with patch('builtins.open', mock_open(read_data=file_content.encode())):
-        for segment in parser.parse_file(filepath=filepath):
+        for segment in parser.parse(BytesIO(file_content.encode())):
             segments.append(segment)
 
     assert len(segments) == 1
     assert segments[0].name == 'ISA'
+
+
+def test_determine_delimiters_stream(parser: X12Parser, std_file_content: str):
+    stream = BytesIO(std_file_content.encode())
+    delimiters = parser._determine_delimiters(stream)
+
+    assert delimiters.component_sep == ':'
+    assert delimiters.element_sep == '*'
+    assert delimiters.repeat_sep == '^'
+    assert delimiters.segment_term == '~'
+
+
+def test_determine_delimiters_stream_too_short(parser: X12Parser):
+    stream = BytesIO(b'abc')
+    with pytest.raises(ValueError) as error:
+        parser._determine_delimiters(stream)
+
+    assert error.type is ValueError
+    assert 'File is too short to be a valid X12 Document.' in str(error.value)
+
+
+def test_determine_delimiters_stream_invalid(parser: X12Parser, std_file_content: str):
+    stream = BytesIO(f'ABC{std_file_content}'.encode())
+    with pytest.raises(ValueError) as error:
+        parser._determine_delimiters(stream)
+
+    assert error.type is ValueError
+    assert 'X12 document must begin with ISA segment.' in str(error.value)
+
+
+def test_iter_segments_stream(
+        parser: X12Parser,
+        std_file_content: str,
+        delimiters: Delimiters
+):
+    stream = BytesIO(std_file_content.encode())
+    segments = list(parser._iter_segments(stream, delimiters))
+
+    assert len(segments) == 4
+    assert segments[0].startswith('ISA')
+    assert segments[1].startswith('GS')
+
+
+def test_parse_stream(
+        std_file_content: str,
+        expected_content: List[List[str]]
+):
+    parser = X12Parser()
+    stream = BytesIO(std_file_content.encode())
+    segments: List[SegmentInfo] = list(parser.parse(stream))
+
+    assert len(segments) == 4
+    expected_names = ['ISA', 'GS', 'ST', 'BPR']
+    for idx, segment in enumerate(segments):
+        assert segment.name == expected_names[idx]
+
+    for i, content in enumerate(expected_content):
+        assert len(segments[i]) == len(content) + 1
+        for j, value in enumerate(content):
+            assert segments[i].has_element_idx(j + 1, ignore_empty=False)
+            assert segments[i].get_element(j + 1).get_value() == value
+
+
+def test_parse_stream_does_not_close(std_file_content: str):
+    # The parser should not close a stream it didn't open
+    stream = BytesIO(std_file_content.encode())
+    parser = X12Parser()
+    list(parser.parse(stream))
+
+    assert not stream.closed
+
+
+def test_parse_file_closes_stream(std_file_content: str, filepath: str):
+    # When given a filepath, the parser should clean up after itself.
+    # We verify this indirectly by ensuring parse_file completes without
+    # resource leak warnings and the mock is called correctly.
+    parser = X12Parser()
+    m = mock_open(read_data=std_file_content.encode())
+    with patch('builtins.open', m):
+        list(parser.parse(filepath))
+
+    m.return_value.close.assert_called_once()
+
+
+def test_parse_stream_leftover(expected_content: List[List[str]]):
+    parser = X12Parser(110)
+    file_content = (
+        "ISA*00*          *00*          *30*341858379      *30*820836617      "
+        "*250717*2350*^*00501*290360607*0*P*:~GS*HP*ECHOH*820836617*20250717*"
+        "2350*1*X*005010X221A1~"
+    )
+    stream = BytesIO(file_content.encode())
+    segments: List[SegmentInfo] = list(parser.parse(stream))
+
+    assert len(segments) == 2
+    for i, segment in enumerate(segments):
+        content = expected_content[i]
+        assert len(content) + 1 == len(segment)
+        for j, value in enumerate(content):
+            assert segment.has_element_idx(j + 1, ignore_empty=False)
+            assert segment.get_element(j + 1).get_value() == value
