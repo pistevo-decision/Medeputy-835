@@ -333,7 +333,7 @@ python -m pip install --upgrade twine
 python3 -m twine upload --repository testpypi dist/*
 ```
 
-**5. Upload to PyPi (optional)**
+**5. Upload to PyPi**
 
 ```
 python -m pip install --upgrade twine
